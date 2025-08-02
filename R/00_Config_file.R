@@ -74,10 +74,14 @@ fun_list <-
   )
 
 # source them
-sapply(
-  paste0("R/functions/", fun_list, sep = ""),
-  source
-)
+if (
+  length(fun_list) > 0
+) {
+  sapply(
+    paste0("R/Functions/", fun_list, sep = ""),
+    source
+  )
+}
 
 
 #----------------------------------------------------------#

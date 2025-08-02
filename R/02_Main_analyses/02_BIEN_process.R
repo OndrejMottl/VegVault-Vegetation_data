@@ -30,7 +30,7 @@ source(
 
 data_bien_files <-
   here::here(
-    "Data/Input/BIEN/Plot_data"
+    "Data/Input/BIEN/"
   ) %>%
   list.files() %>%
   purrr::map(
@@ -42,7 +42,7 @@ data_bien_files <-
     .f = ~ RUtilpol::get_latest_file(
       file_name = .x,
       dir = here::here(
-        "Data/Input/BIEN/Plot_data"
+        "Data/Input/BIEN/"
       )
     )
   )
