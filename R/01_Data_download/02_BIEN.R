@@ -39,7 +39,7 @@ vec_datasource <-
 # path to the directory
 sel_path <-
   here::here(
-    "Data/Input/BIEN/Plot_data"
+    "Data/Input/BIEN/"
   )
 
 # download each sampling protocol and save it as individual file
