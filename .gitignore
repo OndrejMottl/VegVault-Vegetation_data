@@ -43,6 +43,4 @@ vignettes/*.pdf
 
 # Large files
 *.RData
-Data/Input/BIEN/Plot_data/*.rds
-Data/Input/BIEN/Trait_data/*.qs
-Data/Processed/BIEN/data_traits*.qs
+Data/Input/BIEN/*.rds
