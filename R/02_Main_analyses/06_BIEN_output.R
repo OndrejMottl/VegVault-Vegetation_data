@@ -61,6 +61,5 @@ RUtilpol::save_latest_file(
   dir = here::here(
     "Outputs/Data/"
   ),
-  prefered_format = "qs",
-  preset = "archive"
+  prefered_format = "qs"
 )
