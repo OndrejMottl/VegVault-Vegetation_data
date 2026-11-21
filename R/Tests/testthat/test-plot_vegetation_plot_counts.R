@@ -91,3 +91,31 @@ testthat::test_that("plot_vegetation_plot_counts() draws one panel per group", {
 
   testthat::expect_s3_class(res$facet, "FacetWrap")
 })
+
+testthat::test_that("plot_vegetation_plot_counts() draws a map in each panel", {
+  data_plots <-
+    tibble::tibble(
+      datasource = c("CVS", "CVS", "TEAM"),
+      longitude = c(-80, -81, -70),
+      latitude = c(35, 36, -5)
+    )
+
+  res <-
+    plot_vegetation_plot_counts(
+      data_plots = data_plots,
+      col_longitude = "longitude",
+      col_latitude = "latitude",
+      title = "BIEN plots",
+      col_facet = "datasource"
+    )
+
+  data_basemap <-
+    ggplot2::get_layer_data(res, i = 1L)
+
+  vec_panels <-
+    dplyr::pull(data_basemap, PANEL) |>
+    base::unique() |>
+    base::as.character()
+
+  testthat::expect_setequal(vec_panels, c("1", "2"))
+})

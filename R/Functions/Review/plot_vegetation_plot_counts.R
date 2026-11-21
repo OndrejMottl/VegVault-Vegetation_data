@@ -13,8 +13,10 @@
 #' @return A `ggplot` object; nothing is drawn or saved.
 #' @details The map uses 90 hexagonal bins, a viridis fill on a `log1p`
 #'   scale (labelled "Number of plots") and `coord_quickmap()`, as the maps
-#'   of VegVault 1.0.0. Plots with a missing coordinate are left out. The
-#'   function aborts when a named column is missing.
+#'   of VegVault 1.0.0. The basemap is a polygon layer of
+#'   `ggplot2::map_data("world")`, drawn in every panel. Plots with a missing
+#'   coordinate are left out. The function aborts when a named column is
+#'   missing.
 plot_vegetation_plot_counts <- function(
     data_plots,
     col_longitude,
@@ -87,7 +89,17 @@ plot_vegetation_plot_counts <- function(
       fill = "Number of plots"
     ) +
     ggplot2::theme_classic() +
-    ggplot2::annotation_borders(
+    # annotation_borders() passes the map groups as one fixed vector, which
+    #   fails as soon as facets copy the map into several panels (ggplot2
+    #   4.0); a polygon layer with mapped groups is copied correctly.
+    ggplot2::geom_polygon(
+      data = ggplot2::map_data("world"),
+      mapping = ggplot2::aes(
+        x = .data[["long"]],
+        y = .data[["lat"]],
+        group = .data[["group"]]
+      ),
+      inherit.aes = FALSE,
       fill = "gray80",
       colour = NA
     ) +
