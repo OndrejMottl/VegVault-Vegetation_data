@@ -9,12 +9,14 @@
 #'   `datasource` holding the datasource name of each record.
 #' @details A datasource is dropped when its file holds `NULL`, an object
 #'   whose values are all missing, or a data frame without rows, as in the
-#'   VegVault 1.0.0 processing. The remaining tables are bound in the order of
-#'   `vec_datasources` with `dplyr::bind_rows(.id = "datasource")`, which
-#'   replaces the `datasource` column that BIEN records carry with the
-#'   datasource name of their file. The
-#'   function aborts when the two vectors differ in length, a name is
-#'   duplicated, a file does not exist, or no datasource has records.
+#'   VegVault 1.0.0 processing. In each remaining table, columns that BIEN
+#'   returns twice are collapsed with `deduplicate_bien_columns()`. The
+#'   tables are bound in the order of `vec_datasources` with
+#'   `dplyr::bind_rows(.id = "datasource")`, which replaces the `datasource`
+#'   column that BIEN records carry with the datasource name of their file.
+#'   The function aborts when the two vectors differ in length, a name is
+#'   duplicated, a file does not exist, no datasource has records, or the
+#'   copies of a repeated column differ.
 load_bien_raw_files <- function(
     vec_paths,
     vec_datasources) {
@@ -83,6 +85,9 @@ load_bien_raw_files <- function(
 
   res <-
     list_with_records |>
+    purrr::map(
+      .f = ~ deduplicate_bien_columns(data_raw = .x)
+    ) |>
     dplyr::bind_rows(.id = "datasource") |>
     tibble::as_tibble()
 

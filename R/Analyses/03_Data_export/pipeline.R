@@ -10,9 +10,10 @@
 #                         2026
 #
 #----------------------------------------------------------#
-# Defines the data export target graph: complete plots (and, for sPlot,
-#   only named taxon records) with clean column names in a documented row
-#   order, saved as the `qs2` artefacts that VegVault reads.
+# Defines the data export target graph: complete plots (for sPlot, only
+#   named taxon records, merged to one per taxon; for BIEN, with a stable
+#   `plot_id`) with clean column names in a documented row order, saved as
+#   the `qs2` artefacts that VegVault reads.
 # Run with:
 #   R/Analyses/03_Data_export/00_run.R
 # Sourcing this script only declares targets; it does not execute them.
@@ -37,6 +38,34 @@ splot_column_taxa <-
 
 splot_column_taxon_name <-
   load_config_value(value = c("splot", "column_taxon_name"))
+
+list_splot_merge <-
+  list(
+    column_scale = load_config_value(value = c("splot", "column_scale")),
+    column_abundance = load_config_value(
+      value = c("splot", "column_abundance")
+    ),
+    column_relative_cover = load_config_value(
+      value = c("splot", "column_relative_cover")
+    ),
+    column_original_name = load_config_value(
+      value = c("splot", "column_original_name")
+    ),
+    scale_presence = load_config_value(value = c("splot", "scale_presence")),
+    scale_cover = load_config_value(value = c("splot", "scale_cover")),
+    scales_summed = load_config_value(
+      value = c("splot", "scales_summed")
+    ) |>
+      base::unlist(),
+    scales_maximum = load_config_value(
+      value = c("splot", "scales_maximum")
+    ) |>
+      base::unlist(),
+    separator = load_config_value(value = c("splot", "merge_separator"))
+  )
+
+bien_plot_id_separator <-
+  load_config_value(value = c("bien", "plot_id_separator"))
 
 vec_splot_columns_required <-
   load_config_value(value = c("splot", "columns_required")) |>
@@ -144,22 +173,52 @@ list(
       col_taxon_name = splot_column_taxon_name
     )
   ),
+  # sPlot plots with one taxon record per taxon, merged by the approved
+  #   rules, so that VegVault can key its sample-taxon table.
+  targets::tar_target(
+    name = "data_splot_merged_taxa",
+    command = aggregate_splot_taxa(
+      data_plots = data_splot_named_taxa,
+      col_taxa = splot_column_taxa,
+      col_taxon = splot_column_taxon_name,
+      col_scale = list_splot_merge[["column_scale"]],
+      col_abundance = list_splot_merge[["column_abundance"]],
+      col_relative_cover = list_splot_merge[["column_relative_cover"]],
+      col_original_name = list_splot_merge[["column_original_name"]],
+      scale_presence = list_splot_merge[["scale_presence"]],
+      scale_cover = list_splot_merge[["scale_cover"]],
+      vec_scales_summed = list_splot_merge[["scales_summed"]],
+      vec_scales_maximum = list_splot_merge[["scales_maximum"]],
+      separator = list_splot_merge[["separator"]]
+    )
+  ),
   # Public target: complete sPlot plots in export form and order.
   targets::tar_target(
     name = "data_splot_export",
     command = prepare_plot_export(
-      data_plots = data_splot_named_taxa,
+      data_plots = data_splot_merged_taxa,
       vec_columns_required = vec_splot_columns_required,
       vec_columns_order = vec_splot_columns_order
     )
   ),
-  # Public target: complete BIEN plots in export form and order.
+  # Complete BIEN plots in export form and order.
   targets::tar_target(
-    name = "data_bien_export",
+    name = "data_bien_complete",
     command = prepare_plot_export(
       data_plots = data_bien_processed,
       vec_columns_required = vec_bien_columns_required,
       vec_columns_order = vec_bien_columns_order
+    )
+  ),
+  # Public target: the complete BIEN plots with their stable `plot_id`;
+  #   a plot split over several rows stops the run.
+  targets::tar_target(
+    name = "data_bien_export",
+    command = prepare_bien_plot_id(
+      data_plots = data_bien_complete,
+      col_datasource = "datasource",
+      col_plot_name = "plot_name",
+      separator = bien_plot_id_separator
     )
   ),
   # The sPlot artefact for VegVault, tracked as a file.
