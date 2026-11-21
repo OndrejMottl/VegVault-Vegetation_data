@@ -122,3 +122,37 @@ testthat::test_that("load_bien_raw_files() names records after the datasource of
   testthat::expect_identical(base::names(res), c("datasource", "plot_name"))
   testthat::expect_identical(res$datasource, "TEAM")
 })
+
+testthat::test_that("load_bien_raw_files() collapses repeated BIEN columns", {
+  dir_raw <-
+    withr::local_tempdir()
+
+  data_cvs <-
+    base::data.frame(
+      plot_name = "C1",
+      date_collected = base::as.Date("2010-05-01"),
+      name_matched = "Quercus alba",
+      date_collected = base::as.Date("2010-05-01"),
+      check.names = FALSE
+    )
+
+  path_file <-
+    base::file.path(dir_raw, "CVS.rds")
+
+  base::saveRDS(object = data_cvs, file = path_file)
+
+  res <-
+    load_bien_raw_files(
+      vec_paths = path_file,
+      vec_datasources = "CVS"
+    )
+
+  testthat::expect_named(
+    res,
+    c("datasource", "plot_name", "date_collected", "name_matched")
+  )
+  testthat::expect_equal(
+    dplyr::pull(res, date_collected),
+    base::as.Date("2010-05-01")
+  )
+})

@@ -13,6 +13,12 @@ Both hold `qs2` content under the `.qs` extension. VegVault fetches them from th
 
 Treat filenames, identifiers, coordinates, taxa, abundances, plot metadata, units, row order, and nested object structure as interfaces consumed by the main VegVault repository.
 
+Content rules of the artefacts (approved by Ondřej; details and settings in `README.md` and `config.yml`):
+
+- Each nested `taxa` (sPlot) and `plot_data` (BIEN) element holds at most one record per taxon (`Species`, `name_matched`), and no sPlot record lacks a `Species`.
+- BIEN plots carry `plot_id`, `<datasource>__<plot_name>`: unique, never missing, and independent of row order and of BIEN's internal identifiers. Changing its composition is a contract change.
+- BIEN records come from the latest survey year of each plot. Counts are sums of non-missing values, and stay missing where the source has none.
+
 ## Safety
 
 - BIEN and sPlot inputs may be licensed, restricted, or non-redistributable. Never expose raw data, credentials, request tokens, ignored extracts, or derived records beyond their licence.

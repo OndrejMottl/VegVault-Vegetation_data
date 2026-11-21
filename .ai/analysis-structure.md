@@ -27,8 +27,8 @@ R/
   Analyses/
     00_run_main.R          runs the main stages in order (01 to 03)
     01_Data_acquisition/   sPlotOpen file check, BIEN raw files
-    02_Data_processing/    sPlot taxa nested and joined, BIEN selected and nested
-    03_Data_export/        unnamed sPlot taxa, completeness filters, export order, qs2 artefacts, contract check
+    02_Data_processing/    sPlot taxa nested and joined; BIEN coordinates, latest survey, one record per taxon, nested
+    03_Data_export/        unnamed and repeated sPlot taxa, completeness filters, export order, BIEN plot_id, qs2 artefacts, contract check
     90_Review/             maps and plot-size review, outside the main chain
   Tests/
     Run_tests.R            full suite runner
@@ -63,7 +63,9 @@ R/
 ## Export and producer contracts
 
 - The export stage writes `data_splot_<YYYY-MM-DD>__<hash>__.qs` and `data_bien_<YYYY-MM-DD>__<hash>__.qs` (`qs2` content, `<hash>` is `rlang::hash()` of the object) to `export: dir_output`. It never keeps two versions of an artefact in that folder unless `export: flag_replace_previous` is `true`.
-- Before the completeness filter, `filter_named_taxa()` drops the sPlot taxon records whose name (`splot: column_taxon_name`) is missing or empty, and the plots left without a named record, because the sPlot contract rejects both. The processed sPlot data still hold these records.
+- Before the completeness filter, `filter_named_taxa()` drops the sPlot taxon records whose name (`splot: column_taxon_name`) is missing or empty, and the plots left without a named record, because the sPlot contract rejects both. `aggregate_splot_taxa()` then merges repeated taxa to one record per taxon and plot (rules in `README.md`, settings under `splot:`). The processed sPlot data still hold the unmerged records.
+- The BIEN processing works on records before nesting: `prepare_plot_coordinates()` (one coordinate pair per plot within `bien: coordinate_max_spread`), `select_latest_survey()` (latest survey year per plot, `bien: column_date`) and `aggregate_bien_taxa()` (one record per taxon and plot; every nested column has one role under `bien:`). `load_bien_raw_files()` collapses the columns that BIEN returns twice (`recorded_by`, `date_collected`) with `deduplicate_bien_columns()`, so they keep their names.
+- After the completeness filter, `prepare_bien_plot_id()` adds `plot_id` (`<datasource>__<plot_name>`) as the first column of `data_bien_export`, and stops the run when two rows share one.
 - Row order is explicit (`splot: columns_order`, `bien: columns_order`), so it does not depend on the order in which a source delivered its records. VegVault's v1 import names BIEN plots by row number, so a change of order is a contract change.
 - Each artefact is checked with `validate_producer_artefact()` against its contract in `Data/Contracts/`; a violation stops the run.
 - `Data/Contracts/` (`splot_plots.yml`, `bien_plots.yml`, `contract_copy.yml`) and `R/Functions/Contracts/` are a copy made by VegVault's `save_contract_copy()` from one VegVault commit, recorded in `contract_copy.yml`. Never edit them here. To update, run `save_contract_copy()` from a clean VegVault checkout on the shared release branch (see VegVault's `Data/Contracts/README.md`) and commit the result. `test-validate_contract_copy.R` checks the copy against the sibling VegVault checkout. Contract changes go through the VegVault pipeline lane.
