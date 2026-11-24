@@ -44,3 +44,17 @@ vignettes/*.pdf
 # Large files
 *.RData
 Data/Input/BIEN/*.rds
+
+# Project template
+.RDataTmp
+Rplots.pdf
+.vscode/settings.json
+secrets.yaml
+_targets.yaml
+_targets/
+Data/Targets_data/*
+!Data/Targets_data/.keep
+Private/
+**/Private/
+Outputs/Data_temp/*
+!Outputs/Data_temp/.keep

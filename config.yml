@@ -1,0 +1,205 @@
+# Project configuration read through `load_config_value()`.
+# Select a profile with the `R_CONFIG_ACTIVE` environment variable; the
+#   `default` profile is used otherwise. Other profiles inherit from
+#   `default` and only list the values they change.
+# Machine-local paths do not belong here; put them in the git-ignored
+#   `secrets.yaml` (see `secrets_example.yaml`).
+
+default:
+  seed: 900723
+  # Data root used when `secrets.yaml` is absent; relative to the project.
+  #   Raw inputs live in `<data root>/Input/`.
+  data_storage_path: "Data"
+  # Packages for `R/___Init_project___.R` to install and renv to record.
+  #   Packages called only as `pkg::fun()` are detected automatically.
+  packages:
+    # Attached by `R/___setup_project___.R`. Do not attach packages that
+    #   mask base functions (e.g. renv, config).
+    attach:
+      - assertthat
+      - cli
+      - here
+      - targets
+      - tidyverse
+    # Installed and recorded, but not attached (IDE and workflow tools).
+    #   hexbin and maps are used only through ggplot2 (the review maps),
+    #   so renv cannot detect them from the code.
+    tools:
+      - hexbin
+      - httpgd
+      - languageserver
+      - maps
+      - roxygen2
+      - visNetwork
+  graphical:
+    width: 16
+    height: 12
+    units: "cm"
+    dpi: 300
+    bg: "white"
+    text_size: 10
+    line_size: 0.1
+  # sPlotOpen is a manual download (iDiv data portal, dataset 3474); the
+  #   pipeline never downloads it and stops when the file is missing or
+  #   differs from the recorded version.
+  splot:
+    raw_file: "Input/sPlot/Raw/sPlotOpen.RData"
+    raw_file_version: "sPlotOpen 2.0, iDiv dataset 3474 version 76"
+    raw_file_sha256: "f938ed5a4823cb478e318ebc0f1b176a2b1d47215b8081f80f8822aec02418c1"
+    # Taxon records whose name is missing or empty are dropped before
+    #   export, because the VegVault sPlot contract rejects them; plots
+    #   left without a named record are dropped too.
+    column_taxa: "taxa"
+    column_taxon_name: "Species"
+    # Repeated taxa within a plot are merged to one record before export:
+    #   a presence-only record gives way to a measured one; covers combine
+    #   as layers, the summed scales add up, the maximum scales keep the
+    #   largest value; relative covers add up; original names are joined.
+    column_scale: "Abundance_scale"
+    column_abundance: "Original_abundance"
+    column_relative_cover: "Relative_cover"
+    column_original_name: "Original_species"
+    scale_presence: "pa"
+    scale_cover: "CoverPerc"
+    scales_summed:
+      - x_IC
+      - x_SC
+      - x_BA
+    scales_maximum:
+      - x_IV
+      - x_PF
+    merge_separator: " | "
+    # Plots missing any of these are dropped before export
+    columns_required:
+      - PlotObservationID
+      - GIVD_ID
+      - Longitude
+      - Latitude
+      - Releve_area
+    # Row order of the export (column names after cleaning)
+    columns_order:
+      - plot_observation_id
+  bien:
+    # Download the BIEN plot data from the BIEN database. Keep FALSE: a
+    #   normal run reads the files already in `raw_dir` and never downloads.
+    flag_download: false
+    raw_dir: "Input/BIEN"
+    # Plot datasources of BIEN database 4.2.8, one raw file each. With
+    #   `flag_download: true` the run stops if BIEN lists a different set.
+    datasources:
+      - CTFS
+      - CVS
+      - FIA
+      - gillespie
+      - SALVIAS
+      - TEAM
+      - VegBank
+    # Columns kept from the downloaded records
+    columns_selected:
+      - datasource_id
+      - datasource
+      - plot_name
+      - sampling_protocol
+      - methodology_reference
+      - methodology_description
+      - longitude
+      - latitude
+      - plot_area_ha
+      - subplot
+      - individual_count
+      - family_matched
+      - name_matched
+      - name_matched_author
+      - verbatim_family
+      - verbatim_scientific_name
+      - scrubbed_species_binomial
+      - scrubbed_taxonomic_status
+      - scrubbed_family
+      - scrubbed_author
+    # Columns that identify a plot in the raw records
+    columns_plot_key:
+      - datasource
+      - plot_name
+    # A plot whose records carry several coordinate pairs within this
+    #   spread (degrees, about 1 km) gets their mean, e.g. the subplots of
+    #   a TEAM plot; wider spreads are left as they are
+    coordinate_max_spread: 0.01
+    # Survey date of each record; only the latest survey year of a plot is
+    #   kept, so that a re-surveyed individual is counted once
+    column_date: "date_collected"
+    # Records are merged to one per taxon and plot: counts are summed
+    #   (missing when no record has one), record-level columns joined, and
+    #   taxon-level columns must agree. Every nested column has one role.
+    column_taxon: "name_matched"
+    column_count: "individual_count"
+    columns_joined:
+      - subplot
+      - verbatim_family
+      - verbatim_scientific_name
+      - name_matched_author
+      - scrubbed_author
+    columns_agreeing:
+      - family_matched
+      - scrubbed_species_binomial
+      - scrubbed_taxonomic_status
+      - scrubbed_family
+    merge_separator: " | "
+    # Text between datasource and plot name in `plot_id`
+    plot_id_separator: "__"
+    # Record-level columns nested into `plot_data`; the other selected
+    #   columns describe the plot
+    columns_nested:
+      - subplot
+      - individual_count
+      - family_matched
+      - name_matched
+      - name_matched_author
+      - verbatim_family
+      - verbatim_scientific_name
+      - scrubbed_species_binomial
+      - scrubbed_taxonomic_status
+      - scrubbed_family
+      - scrubbed_author
+    # Plots missing any of these are dropped before export
+    columns_required:
+      - datasource_id
+      - datasource
+      - plot_name
+      - longitude
+      - latitude
+      - plot_area_ha
+    # Row order of the export: every plot-level column, so the order does
+    #   not depend on the order in which BIEN delivered the records
+    columns_order:
+      - datasource
+      - datasource_id
+      - plot_name
+      - longitude
+      - latitude
+      - plot_area_ha
+      - sampling_protocol
+      - methodology_reference
+      - methodology_description
+  # Review stage (90_Review): groups whose most common plot size is mapped,
+  #   and the enlargement of the map figures relative to `graphical`
+  review:
+    splot_continents:
+      - Europe
+      - Oceania
+    bien_regions:
+      - North America
+      - Latin America
+    figure_size_scale: 2
+  # Export artefacts read by VegVault. `dir_output` is relative to the
+  #   project. Earlier versions of an artefact are never replaced unless
+  #   `flag_replace_previous` is true.
+  export:
+    dir_output: "Outputs/Data"
+    flag_replace_previous: false
+
+# Test runs, for example the parity check against the old scripts: the
+#   artefacts go to a git-ignored folder, never next to the tracked ones.
+#   Select with the environment variable R_CONFIG_ACTIVE=dev.
+dev:
+  export:
+    dir_output: "Outputs/Data_temp"
